@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>作文工坊 — 專注寫作</title>
+  <meta name="description" content="簡潔線上作文撰寫工具，即時字數統計，自動儲存。">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- 導覽列 -->
+  <nav class="navbar">
+    <div class="nav-brand">作文工坊</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="list">我的作文</button>
+      <button class="nav-tab" data-tab="editor">撰寫新篇</button>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- 作文列表頁 -->
+    <section id="tab-list" class="tab-content active">
+      <div class="list-header">
+        <h1>我的作文</h1>
+        <span id="essay-count" class="count-badge">0 篇</span>
+      </div>
+      <div id="essay-list" class="essay-list">
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <p>還沒有任何作文</p>
+          <p class="empty-hint">點擊上方「撰寫新篇」開始寫作吧！</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 編輯器頁 -->
+    <section id="tab-editor" class="tab-content">
+      <div class="editor-header">
+        <input type="text" id="essay-title" class="title-input" placeholder="作文標題..." maxlength="60">
+        <div class="editor-meta">
+          <span id="word-count" class="word-counter">字數：0</span>
+          <span id="word-min-hint" class="word-min-hint">（需達 400 字）</span>
+          <span id="save-status" class="save-status">已儲存</span>
+        </div>
+      </div>
+      <textarea id="essay-editor" class="essay-editor" placeholder="在此開始書寫你的作文...&#10;&#10;提示：最少需要 400 個字。包含中文字、英文字母、數字及標點符號均計入。"></textarea>
+      <div class="editor-actions">
+        <button id="btn-save" class="btn btn-primary">儲存作文</button>
+        <button id="btn-cancel" class="btn btn-ghost">取消</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>作文工坊 — 專注寫作，讓文字自由流淌。</p>
+  </footer>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
