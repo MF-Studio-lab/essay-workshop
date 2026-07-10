@@ -99,7 +99,7 @@
         const preview = e.content.replace(/\s/g, '').slice(0, 60);
         return `
         <div class="essay-card" data-id="${e.id}">
-          <div class="essay-card-title">${escapeHtml(e.title || '無標題')}</div>
+          <div class="essay-card-title">${escapeHtml(e.title || '無標題')}${e.wordCount < 400 ? ' <span class="draft-badge">草稿</span>' : ''}</div>
           <div class="essay-card-meta">
             <span>${e.wordCount} 字</span>
             <span>${date}</span>
@@ -186,9 +186,11 @@
     }
 
     const wordCount = countWords(content);
+
     if (wordCount < 400) {
-      alert(`目前只有 ${wordCount} 個字，還需要 ${400 - wordCount} 個字才能儲存。`);
-      return;
+      if (!confirm(`⚠️ 目前只有 ${wordCount} 個字，尚未達到完整作文的 400 字門檻。\n\n仍可儲存為草稿，之後再回來補完。\n確定要儲存嗎？`)) {
+        return;
+      }
     }
 
     const essays = loadEssays();
@@ -277,13 +279,11 @@
     wordCountEl.textContent = `字數：${count}`;
 
     if (count < 400) {
-      wordMinHint.textContent = `（需達 400 字，尚缺 ${400 - count} 字）`;
+      wordMinHint.textContent = `（尚缺 ${400 - count} 字，可先儲存草稿）`;
       wordMinHint.classList.add('warn');
-      btnSave.disabled = true;
     } else {
-      wordMinHint.textContent = '（已達標）';
+      wordMinHint.textContent = '（已達 400 字）';
       wordMinHint.classList.remove('warn');
-      btnSave.disabled = false;
     }
   }
 
