@@ -222,6 +222,15 @@ body {
   background: var(--color-danger-bg);
 }
 
+.btn-sm-primary {
+  color: #fff;
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.btn-sm-primary:hover {
+  background: var(--color-primary-hover);
+}
+
 /* ===== 編輯器頁 ===== */
 .editor-header {
   margin-bottom: 1rem;
@@ -310,6 +319,7 @@ body {
   display: flex;
   gap: 0.75rem;
   margin-top: 1rem;
+  position: relative;
 }
 
 .btn {
@@ -345,6 +355,215 @@ body {
 .btn-ghost:hover {
   background: #f5f5f5;
   color: var(--color-text);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-outline:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* ===== 匯出選單 ===== */
+.export-menu {
+  position: absolute;
+  top: 100%;
+  margin-top: 0.25rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  z-index: 5;
+  overflow: hidden;
+}
+
+.export-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+}
+
+.export-menu button:hover {
+  background: #f5f5f5;
+}
+
+.export-menu button + button {
+  border-top: 1px solid var(--color-border);
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ===== AI 潤稿面板 ===== */
+.polish-section {
+  margin-top: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.polish-summary {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.polish-summary::-webkit-details-marker {
+  display: none;
+}
+
+.polish-summary::before {
+  content: '▶';
+  font-size: 0.7rem;
+  transition: transform var(--transition);
+  color: var(--color-text-muted);
+}
+
+details[open] .polish-summary::before {
+  transform: rotate(90deg);
+}
+
+.polish-body {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.polish-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.polish-config {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.polish-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.polish-input {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  width: 280px;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.polish-input:focus {
+  border-color: var(--color-accent);
+}
+
+.polish-hint {
+  font-size: 0.8rem;
+}
+
+.polish-hint a {
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.polish-hint a:hover {
+  text-decoration: underline;
+}
+
+.polish-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.polish-style {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  font-family: var(--font-sans);
+  background: var(--color-surface);
+  cursor: pointer;
+  outline: none;
+}
+
+.polish-style:focus {
+  border-color: var(--color-accent);
+}
+
+.polish-status {
+  font-size: 0.82rem;
+}
+
+.polish-status.loading {
+  color: var(--color-primary);
+}
+
+.polish-status.success {
+  color: var(--color-success);
+}
+
+.polish-status.error {
+  color: var(--color-danger);
+}
+
+.polish-output {
+  background: #f9fafb;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.polish-output-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.polish-output-header strong {
+  font-size: 0.9rem;
+}
+
+.polish-output-header div {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.polish-result {
+  font-size: 1rem;
+  line-height: 1.9;
+  color: var(--color-text);
+  max-height: 360px;
+  overflow-y: auto;
+  white-space: pre-wrap;
 }
 
 /* ===== Footer ===== */
@@ -384,5 +603,14 @@ body {
   .editor-meta {
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+
+  .polish-config {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .polish-input {
+    width: 100%;
   }
 }

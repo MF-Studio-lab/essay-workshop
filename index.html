@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>作文工坊 — 專注寫作</title>
-  <meta name="description" content="簡潔線上作文撰寫工具，即時字數統計，自動儲存。">
+  <meta name="description" content="簡潔線上作文撰寫工具，即時字數統計，自動儲存。支援匯出 TXT/MD 及 AI 潤稿。">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -46,7 +46,53 @@
       <textarea id="essay-editor" class="essay-editor" placeholder="在此開始書寫你的作文...&#10;&#10;提示：最少需要 400 個字。包含中文字、英文字母、數字及標點符號均計入。"></textarea>
       <div class="editor-actions">
         <button id="btn-save" class="btn btn-primary">儲存作文</button>
+        <button id="btn-export" class="btn btn-outline">匯出檔案 ▾</button>
         <button id="btn-cancel" class="btn btn-ghost">取消</button>
+      </div>
+
+      <!-- 匯出格式下拉選單 -->
+      <div id="export-menu" class="export-menu hidden">
+        <button data-format="txt">匯出 TXT（純文字）</button>
+        <button data-format="md">匯出 MD（Markdown）</button>
+      </div>
+
+      <!-- AI 潤稿面板 -->
+      <div class="polish-section">
+        <details id="polish-details">
+          <summary class="polish-summary">✨ AI 潤稿</summary>
+          <div class="polish-body">
+            <p class="polish-desc">使用 Hugging Face 免費模型潤飾作文，優化語句流暢度與用詞。</p>
+            <div class="polish-config">
+              <label class="polish-label">
+                HF Token
+                <input type="password" id="hf-token" class="polish-input" placeholder="貼上 Hugging Face Access Token（免費申請）">
+              </label>
+              <span class="polish-hint">
+                <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noopener">取得免費 Token →</a>
+              </span>
+            </div>
+            <div class="polish-actions">
+              <select id="polish-style" class="polish-style">
+                <option value="fluency">提升流暢度</option>
+                <option value="concise">精簡文句</option>
+                <option value="expand">擴寫細節</option>
+                <option value="formal">轉正式語氣</option>
+              </select>
+              <button id="btn-polish" class="btn btn-primary">開始潤稿</button>
+              <span id="polish-status" class="polish-status"></span>
+            </div>
+            <div id="polish-output" class="polish-output hidden">
+              <div class="polish-output-header">
+                <strong>潤稿結果</strong>
+                <div>
+                  <button id="btn-polish-apply" class="btn-sm btn-sm-primary">套用</button>
+                  <button id="btn-polish-discard" class="btn-sm">放棄</button>
+                </div>
+              </div>
+              <div id="polish-result" class="polish-result"></div>
+            </div>
+          </div>
+        </details>
       </div>
     </section>
   </main>

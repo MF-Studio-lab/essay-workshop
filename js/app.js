@@ -19,14 +19,31 @@
   const btnSave = document.getElementById('btn-save');
   const btnCancel = document.getElementById('btn-cancel');
 
+  // 匯出
+  const btnExport = document.getElementById('btn-export');
+  const exportMenu = document.getElementById('export-menu');
+
+  // AI 潤稿
+  const hfTokenInput = document.getElementById('hf-token');
+  const polishStyle = document.getElementById('polish-style');
+  const btnPolish = document.getElementById('btn-polish');
+  const polishStatus = document.getElementById('polish-status');
+  const polishOutput = document.getElementById('polish-output');
+  const polishResult = document.getElementById('polish-result');
+  const btnPolishApply = document.getElementById('btn-polish-apply');
+  const btnPolishDiscard = document.getElementById('btn-polish-discard');
+
   // ==================== 狀態 ====================
   let currentTab = 'list';
-  let editingId = null;        // 正在編輯的作文 ID（null = 新增）
-  let saveTimer = null;        // 自動儲存 debounce
-  let lastSavedContent = '';   // 上次儲存的內容
+  let editingId = null;
+  let saveTimer = null;
+  let lastSavedContent = '';
+  let polishTimer = null;       // 潤稿 debounce
+  let polishedText = '';        // 潤稿結果暫存
 
   // ==================== LocalStorage 管理 ====================
   const STORAGE_KEY = 'essay-workshop-data';
+  const HF_TOKEN_KEY = 'essay-workshop-hf-token';
 
   function loadEssays() {
     try {
@@ -53,9 +70,7 @@
   // ==================== 字數計算 ====================
   function countWords(text) {
     if (!text) return 0;
-    // 移除空白後計算字數：包含中文、英文、數字、標點
     const cleaned = text.replace(/\s/g, '');
-    // 使用 Array.from 正確處理 Unicode（含中日韓字元）
     return Array.from(cleaned).length;
   }
 
@@ -113,17 +128,14 @@
         </div>`;
       }).join('');
 
-    // 綁定點擊事件：點擊卡片進入編輯
     essayList.querySelectorAll('.essay-card').forEach(card => {
       card.addEventListener('click', (e) => {
-        // 如果點到刪除按鈕就不進入編輯
         if (e.target.closest('[data-action="delete"]')) return;
         const id = parseInt(card.dataset.id);
         openEditor(id);
       });
     });
 
-    // 綁定刪除按鈕
     essayList.querySelectorAll('[data-action="delete"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -139,6 +151,7 @@
     const essay = id !== null ? essays.find(e => e.id === id) : null;
 
     editingId = essay ? essay.id : null;
+    polishedText = '';
 
     if (essay) {
       titleInput.value = essay.title || '';
@@ -152,9 +165,9 @@
     updateWordCount();
     saveStatus.textContent = '已儲存';
     saveStatus.classList.remove('unsaved');
+    resetPolishUI();
     switchTab('editor');
 
-    // 聚焦編輯器
     setTimeout(() => essayEditor.focus(), 100);
   }
 
@@ -165,7 +178,6 @@
     essays = essays.filter(e => e.id !== id);
     saveAllEssays(essays);
 
-    // 如果在編輯該作文，清空編輯器
     if (editingId === id) {
       editingId = null;
       titleInput.value = '';
@@ -197,7 +209,6 @@
     const now = Date.now();
 
     if (editingId !== null) {
-      // 更新現有作文
       const idx = essays.findIndex(e => e.id === editingId);
       if (idx !== -1) {
         essays[idx].title = title;
@@ -206,7 +217,6 @@
         essays[idx].updatedAt = now;
       }
     } else {
-      // 新增作文
       const newId = essays.length > 0 ? Math.max(...essays.map(e => e.id)) + 1 : 1;
       essays.push({
         id: newId,
@@ -229,10 +239,10 @@
     }
   }
 
-  // ==================== 自動儲存（debounce） ====================
+  // ==================== 自動儲存 ====================
   function autoSave() {
     const content = essayEditor.value;
-    if (content === lastSavedContent) return; // 內容未變
+    if (content === lastSavedContent) return;
 
     const essays = loadEssays();
     const title = titleInput.value.trim();
@@ -248,7 +258,6 @@
         essays[idx].updatedAt = now;
       }
     } else if (content.trim()) {
-      // 草稿模式：尚未手動儲存，但已有內容 — 建立臨時記錄
       const newId = essays.length > 0 ? Math.max(...essays.map(e => e.id)) + 1 : 1;
       essays.push({
         id: newId,
@@ -287,6 +296,181 @@
     }
   }
 
+  // ==================== 匯出功能 ====================
+  function exportEssay(format) {
+    const title = titleInput.value.trim() || '無標題';
+    const content = essayEditor.value;
+
+    if (!content) {
+      alert('沒有內容可供匯出。');
+      return;
+    }
+
+    let text, filename, mimeType;
+
+    if (format === 'md') {
+      text = `# ${title}\n\n${content}`;
+      filename = `${sanitizeFilename(title)}.md`;
+      mimeType = 'text/markdown';
+    } else {
+      text = `${title}\n${'='.repeat(Math.min(title.length, 40))}\n\n${content}`;
+      filename = `${sanitizeFilename(title)}.txt`;
+      mimeType = 'text/plain';
+    }
+
+    const blob = new Blob(['\uFEFF' + text], { type: `${mimeType};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    polishStatus.textContent = `已匯出 ${format.toUpperCase()}`;
+    polishStatus.classList.add('success');
+    setTimeout(() => {
+      polishStatus.textContent = '';
+      polishStatus.classList.remove('success');
+    }, 2000);
+  }
+
+  function sanitizeFilename(str) {
+    return str.replace(/[\\/:*?"<>|]/g, '_').replace(/\s+/g, '_').slice(0, 40) || 'essay';
+  }
+
+  function toggleExportMenu(e) {
+    e.stopPropagation();
+    exportMenu.classList.toggle('hidden');
+  }
+
+  function closeExportMenu(e) {
+    if (!exportMenu.contains(e.target) && e.target !== btnExport) {
+      exportMenu.classList.add('hidden');
+    }
+  }
+
+  // ==================== AI 潤稿功能 ====================
+  const POLISH_PROMPTS = {
+    fluency: '請在不改變原意的情況下，優化以下中文文章的語句流暢度和用詞。保持原有結構，只潤飾文句。直接回傳潤飾後的全文，不要加入任何說明：',
+    concise: '請精簡以下中文文章，移除重複或冗餘的句子，但保留所有重要觀點。直接回傳精簡後的全文，不要加入任何說明：',
+    expand: '請在不改變原意的情況下，為以下中文文章補充更多細節與描寫，使內容更豐富。直接回傳擴寫後的全文，不要加入任何說明：',
+    formal: '請將以下中文文章轉換為較正式的書面語氣，適合投稿或學術用途。直接回傳轉換後的全文，不要加入任何說明：'
+  };
+
+  function loadHFToken() {
+    try {
+      return localStorage.getItem(HF_TOKEN_KEY) || '';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function saveHFToken(token) {
+    try {
+      localStorage.setItem(HF_TOKEN_KEY, token);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function resetPolishUI() {
+    polishOutput.classList.add('hidden');
+    polishResult.innerHTML = '';
+    polishedText = '';
+    polishStatus.textContent = '';
+    polishStatus.classList.remove('loading', 'error', 'success');
+  }
+
+  async function doPolish() {
+    const content = essayEditor.value;
+    if (!content) {
+      alert('請先輸入作文內容再進行潤稿。');
+      return;
+    }
+
+    const token = hfTokenInput.value.trim() || loadHFToken();
+    if (!token) {
+      alert('請先貼上 Hugging Face Access Token。\n\n可至 https://huggingface.co/settings/tokens 免費申請。');
+      return;
+    }
+
+    const style = polishStyle.value;
+    const prompt = POLISH_PROMPTS[style] + '\n\n' + content;
+
+    // UI loading state
+    btnPolish.disabled = true;
+    polishStatus.textContent = 'AI 潤稿中...';
+    polishStatus.classList.add('loading');
+    polishOutput.classList.add('hidden');
+
+    try {
+      const resp = await fetch(
+        'https://router.huggingface.co/hf-inference/models/google/gemma-2-2b-it/v1/chat/completions',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'google/gemma-2-2b-it',
+            messages: [{ role: 'user', content: prompt }],
+            max_tokens: 2048,
+            temperature: 0.7
+          })
+        }
+      );
+
+      if (!resp.ok) {
+        if (resp.status === 401 || resp.status === 403) {
+          throw new Error('HF Token 無效，請確認 Token 是否正確。');
+        }
+        if (resp.status === 429) {
+          throw new Error('請求過於頻繁，請稍後再試。');
+        }
+        const errBody = await resp.text().catch(() => '');
+        throw new Error(`API 錯誤 (${resp.status}): ${errBody.slice(0, 200)}`);
+      }
+
+      const data = await resp.json();
+      const result = data.choices?.[0]?.message?.content || '';
+
+      if (!result.trim()) {
+        throw new Error('模型未回傳結果，請換一個 HF Token 再試。');
+      }
+
+      polishedText = result.trim();
+      polishResult.innerHTML = escapeHtml(polishedText).replace(/\n/g, '<br>');
+      polishOutput.classList.remove('hidden');
+      polishStatus.textContent = '潤稿完成 ✓';
+      polishStatus.classList.remove('loading');
+      polishStatus.classList.add('success');
+
+    } catch (err) {
+      polishStatus.textContent = err.message;
+      polishStatus.classList.remove('loading');
+      polishStatus.classList.add('error');
+    } finally {
+      btnPolish.disabled = false;
+    }
+  }
+
+  function applyPolish() {
+    if (!polishedText) return;
+    essayEditor.value = polishedText;
+    lastSavedContent = polishedText;
+    updateWordCount();
+    saveStatus.textContent = '未儲存';
+    saveStatus.classList.add('unsaved');
+    resetPolishUI();
+  }
+
+  function discardPolish() {
+    resetPolishUI();
+  }
+
   // ==================== 工具函數 ====================
   function escapeHtml(str) {
     const div = document.createElement('div');
@@ -299,7 +483,7 @@
     tab.addEventListener('click', () => {
       const tabName = tab.dataset.tab;
       if (tabName === 'editor') {
-        openEditor(null); // 新增模式
+        openEditor(null);
       } else {
         switchTab(tabName);
       }
@@ -311,6 +495,7 @@
     scheduleAutoSave();
     saveStatus.textContent = '未儲存';
     saveStatus.classList.add('unsaved');
+    resetPolishUI();
   });
 
   titleInput.addEventListener('input', () => {
@@ -319,7 +504,6 @@
     saveStatus.classList.add('unsaved');
   });
 
-  // Ctrl+S / Cmd+S 快速儲存
   essayEditor.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
@@ -340,10 +524,37 @@
     }
   });
 
+  // 匯出事件
+  btnExport.addEventListener('click', toggleExportMenu);
+  exportMenu.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-format]');
+    if (btn) {
+      exportEssay(btn.dataset.format);
+      exportMenu.classList.add('hidden');
+    }
+  });
+  document.addEventListener('click', closeExportMenu);
+
+  // AI 潤稿事件
+  btnPolish.addEventListener('click', doPolish);
+  btnPolishApply.addEventListener('click', applyPolish);
+  btnPolishDiscard.addEventListener('click', discardPolish);
+
+  // HF Token 自動儲存至 localStorage
+  hfTokenInput.addEventListener('input', () => {
+    saveHFToken(hfTokenInput.value.trim());
+  });
+
   // ==================== 初始化 ====================
   renderEssayList();
   updateWordCount();
 
-  // ==================== 暴露必要函數到 window（供 HTML onclick 等使用） ====================
+  // 載入已儲存的 HF Token
+  const savedToken = loadHFToken();
+  if (savedToken) {
+    hfTokenInput.value = savedToken;
+  }
+
+  // ==================== 暴露必要函數到 window ====================
   window.switchTab = switchTab;
 })();
