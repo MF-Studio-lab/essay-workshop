@@ -24,7 +24,6 @@
   const exportMenu = document.getElementById('export-menu');
 
   // AI 潤稿
-  const hfTokenInput = document.getElementById('hf-token');
   const polishStyle = document.getElementById('polish-style');
   const btnPolish = document.getElementById('btn-polish');
   const polishStatus = document.getElementById('polish-status');
@@ -43,7 +42,6 @@
 
   // ==================== LocalStorage 管理 ====================
   const STORAGE_KEY = 'essay-workshop-data';
-  const HF_TOKEN_KEY = 'essay-workshop-hf-token';
 
   function loadEssays() {
     try {
@@ -351,29 +349,13 @@
     }
   }
 
-  // ==================== AI 潤稿功能 ====================
+// ==================== AI 潤稿功能 ====================
   const POLISH_PROMPTS = {
     fluency: '請在不改變原意的情況下，優化以下中文文章的語句流暢度和用詞。保持原有結構，只潤飾文句。直接回傳潤飾後的全文，不要加入任何說明：',
     concise: '請精簡以下中文文章，移除重複或冗餘的句子，但保留所有重要觀點。直接回傳精簡後的全文，不要加入任何說明：',
     expand: '請在不改變原意的情況下，為以下中文文章補充更多細節與描寫，使內容更豐富。直接回傳擴寫後的全文，不要加入任何說明：',
     formal: '請將以下中文文章轉換為較正式的書面語氣，適合投稿或學術用途。直接回傳轉換後的全文，不要加入任何說明：'
   };
-
-  function loadHFToken() {
-    try {
-      return localStorage.getItem(HF_TOKEN_KEY) || '';
-    } catch (e) {
-      return '';
-    }
-  }
-
-  function saveHFToken(token) {
-    try {
-      localStorage.setItem(HF_TOKEN_KEY, token);
-    } catch (e) {
-      // ignore
-    }
-  }
 
   function resetPolishUI() {
     polishOutput.classList.add('hidden');
@@ -390,12 +372,6 @@
       return;
     }
 
-    const token = hfTokenInput.value.trim() || loadHFToken();
-    if (!token) {
-      alert('請先貼上 Hugging Face Access Token。\n\n可至 https://huggingface.co/settings/tokens 免費申請。');
-      return;
-    }
-
     const style = polishStyle.value;
     const prompt = POLISH_PROMPTS[style] + '\n\n' + content;
 
@@ -406,43 +382,29 @@
     polishOutput.classList.add('hidden');
 
     try {
-      const resp = await fetch(
-        'https://router.huggingface.co/hf-inference/models/google/gemma-2-2b-it/v1/chat/completions',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'google/gemma-2-2b-it',
-            messages: [{ role: 'user', content: prompt }],
-            max_tokens: 2048,
-            temperature: 0.7
-          })
-        }
-      );
+      const resp = await fetch('https://text.pollinations.ai/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          model: 'openai',
+          seed: Math.floor(Math.random() * 1000000)
+        })
+      });
 
       if (!resp.ok) {
-        if (resp.status === 401 || resp.status === 403) {
-          throw new Error('HF Token 無效，請確認 Token 是否正確。');
-        }
-        if (resp.status === 429) {
-          throw new Error('請求過於頻繁，請稍後再試。');
-        }
         const errBody = await resp.text().catch(() => '');
         throw new Error(`API 錯誤 (${resp.status}): ${errBody.slice(0, 200)}`);
       }
 
-      const data = await resp.json();
-      const result = data.choices?.[0]?.message?.content || '';
+      const result = await resp.text();
 
       if (!result.trim()) {
-        throw new Error('模型未回傳結果，請換一個 HF Token 再試。');
+        throw new Error('模型未回傳結果，請稍後再試。');
       }
 
       polishedText = result.trim();
-      polishResult.innerHTML = escapeHtml(polishedText).replace(/\n/g, '<br>');
+      polishResult.textContent = polishedText;
       polishOutput.classList.remove('hidden');
       polishStatus.textContent = '潤稿完成 ✓';
       polishStatus.classList.remove('loading');
@@ -540,20 +502,9 @@
   btnPolishApply.addEventListener('click', applyPolish);
   btnPolishDiscard.addEventListener('click', discardPolish);
 
-  // HF Token 自動儲存至 localStorage
-  hfTokenInput.addEventListener('input', () => {
-    saveHFToken(hfTokenInput.value.trim());
-  });
-
   // ==================== 初始化 ====================
   renderEssayList();
   updateWordCount();
-
-  // 載入已儲存的 HF Token
-  const savedToken = loadHFToken();
-  if (savedToken) {
-    hfTokenInput.value = savedToken;
-  }
 
   // ==================== 暴露必要函數到 window ====================
   window.switchTab = switchTab;

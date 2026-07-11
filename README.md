@@ -13,7 +13,7 @@
 - **自動儲存** — 輸入停止 1.5 秒後自動儲存，不怕遺失內容
 - **多篇管理** — 作文列表以卡片呈現，點擊即可繼續編輯
 - **匯出檔案** — 一鍵匯出 TXT 純文字 或 MD Markdown 格式，方便備份
-- **AI 潤稿** — 整合 Hugging Face 免費模型，支援提升流暢度 / 精簡 / 擴寫 / 轉正式語氣
+- **AI 潤稿** — 整合 Pollinations.ai 免費模型（無需 API Key），支援提升流暢度 / 精簡 / 擴寫 / 轉正式語氣
 - **快速鍵** — `Ctrl+S` / `Cmd+S` 手動儲存
 - **純前端 SPA** — 使用 `localStorage` 儲存，零後端依賴
 - **RWD 響應式** — 手機、平板、桌面皆可使用
@@ -38,11 +38,9 @@ python3 -m http.server 8080
 
 ## 🤖 AI 潤稿說明
 
-使用 Hugging Face 免費 Inference API，不需付費，只需一個免費的 Access Token：
+使用 **Pollinations.ai** 免費 API，無需註冊、無需 API Key，打開即用。
 
-1. 前往 [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)（免費註冊即可）
-2. 建立一個 Read 權限的 Token
-3. 貼到編輯器下方「✨ AI 潤稿」面板的 HF Token 欄位（會自動儲存於瀏覽器）
+展開編輯器下方「✨ AI 潤稿」面板，選擇潤稿模式後點擊「開始潤稿」即可。
 
 支援四種潤稿模式：
 - **提升流暢度** — 優化語句流暢度與用詞
@@ -74,7 +72,7 @@ essay-workshop/
 | 樣式 | CSS3（CSS Variables、Flexbox、RWD） |
 | 邏輯 | Vanilla JavaScript ES6+（IIFE 模組化） |
 | 儲存 | `localStorage` |
-| AI API | Hugging Face Serverless Inference API（Gemma 2 2B） |
+| AI API | Pollinations.ai（免費，無需 Key） |
 | 部署 | GitHub Pages |
 
 ---
